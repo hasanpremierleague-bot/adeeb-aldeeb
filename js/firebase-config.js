@@ -16,12 +16,12 @@
 // =====================================================================
 
 window.FIREBASE_CONFIG = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyB-SagCMoR8Ll56nmBDLI4ar4dW97I3nAk",
+  authDomain: "adeeb-640e7.firebaseapp.com",
+  projectId: "adeeb-640e7",
+  storageBucket: "adeeb-640e7.firebasestorage.app",
+  messagingSenderId: "510178375637",
+  appId: "1:510178375637:web:74ef4c0b16f8e048a12f5c"
 };
 
 window.AUTH_SETTINGS = {
