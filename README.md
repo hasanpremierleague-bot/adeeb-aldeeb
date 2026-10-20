@@ -1,9 +1,9 @@
 # Cloud Dev Quiz
 
-A static study and quiz site for AWS Academy Cloud Developing, Modules 2–8 (Module 8 stops at slide 48).
+A static study and quiz site for the IT7101 midterm: AWS Academy Cloud Developing Modules 3–8, using the official slide ranges (M03 7–34, M04 6–43, M05 7–63, M06 7–87, M07 7–65, M08 6–49). Code slides are excluded.
 
 - A study sheet for every lesson.
-- A quiz for every lesson. The lesson quizzes cover every concept in the slides together. Questions are multiple choice, true/false and matching only, with no code questions.
+- A quiz for every lesson. The lesson quizzes cover every concept in the slides together. Questions are multiple choice, true/false, matching and drag & drop, with no code questions.
 - A **Final exam** that mixes all lessons. You can pick 10, 20, 30, 60 or all questions, and it is graded at the end.
 - An **Important & probable questions** panel with high-yield questions from every lesson.
 - **Review my mistakes**, which collects every question you answered wrong until you get it right.
@@ -62,12 +62,14 @@ Then visit http://localhost:8000.
 
 ## Edit questions
 
-The questions and study sheets live in `js/data/m2.js` … `m8.js`. Each question uses one of these formats:
+The questions and study sheets live in `js/data/m3.js` … `m8.js`. Each question uses one of these formats:
 
 ```
 { t: 'mcq',   i: 1, c: 'Topic', q: 'Question?', o: ['Correct answer first', 'Wrong', 'Wrong', 'Wrong'], e: 'Explanation' }
 { t: 'tf',          c: 'Topic', q: 'Statement.', a: true, e: 'Explanation' }
 { t: 'match', i: 1, c: 'Topic', q: 'Match…', p: [['Left', 'Right'], ['Left', 'Right']], e: 'Explanation' }
+{ t: 'dnd',         c: 'Topic', q: 'Drag each…', p: [['Item', 'Box'], ['Item', 'Box']], e: 'Explanation' }
+{ t: 'order',       c: 'Topic', q: 'Put in order…', s: ['First', 'Second', 'Third'], e: 'Explanation' }
 ```
 
 Fields:

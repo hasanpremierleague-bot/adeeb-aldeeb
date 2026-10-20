@@ -20,7 +20,8 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const shuffle = (arr) => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
-  const typeLabel = { mcq: 'Multiple choice', tf: 'True / False', match: 'Matching' };
+  const typeLabel = { mcq: 'Multiple choice', tf: 'True / False', match: 'Matching', dnd: 'Drag & drop', order: 'Drag & drop (order)' };
+  const typeGroup = (t) => (t === 'order' ? 'dnd' : t);
 
   // ---------- theme ----------
   const themeBtn = document.getElementById('themeBtn');
@@ -174,7 +175,7 @@
       <section class="hero">
         <div>
           <h1>${hello}</h1>
-          <p class="muted">Study sheets and ${ALL.length} quiz questions (multiple choice, true/false and matching) covering every concept in Modules 2–8 of AWS Academy Cloud Developing.</p>
+          <p class="muted">Study sheets and ${ALL.length} quiz questions (multiple choice, true/false, matching and drag &amp; drop) covering the IT7101 midterm scope: Modules 3–8 of AWS Academy Cloud Developing, code slides excluded.</p>
         </div>
         <div class="stats">
           <div class="stat"><b>${MODULES.length}</b><span>lessons</span></div>
@@ -196,7 +197,7 @@
           return `<article class="lesson">
             <div class="lesson-head"><span class="lesson-icon">${m.icon}</span><span class="lesson-num">Module ${m.num}</span></div>
             <h3>${esc(m.title)}</h3>
-            <p class="muted small">${m.questions.length} questions${m.note ? ' · slides 1–48' : ''}</p>
+            <p class="muted small">${m.questions.length} questions · ${m.scope}</p>
             <div class="meter"><div style="width:${best || 0}%"></div></div>
             <p class="small">${best == null ? 'Not attempted yet' : 'Best score: <b>' + best + '%</b>'}</p>
             <div class="lesson-actions"><a class="btn btn-ghost btn-sm" href="#/study/${m.id}">📖 Study sheet</a><a class="btn btn-sm" href="#/quiz/${m.id}">📝 Quiz</a></div>
@@ -218,7 +219,7 @@
     app.innerHTML = `
       <div class="crumbs"><a href="#/study">Study sheets</a> / Module ${m.num}</div>
       <article class="study card">
-        <div class="study-head"><span class="lesson-icon big">${m.icon}</span><div><p class="lesson-num">Module ${m.num}</p><h1>${esc(m.title)}</h1>${m.note ? `<p class="note">${esc(m.note)}</p>` : ''}</div></div>
+        <div class="study-head"><span class="lesson-icon big">${m.icon}</span><div><p class="lesson-num">Module ${m.num}</p><h1>${esc(m.title)}</h1><span class="scope">Midterm scope: ${m.scope}</span>${m.note ? `<p class="note">${esc(m.note)}</p>` : ''}</div></div>
         <div class="study-body">${m.study}</div>
         <div class="study-foot"><a class="btn" href="#/quiz/${m.id}">Take the Module ${m.num} quiz (${m.questions.length} questions) →</a>
           <button class="btn btn-ghost" onclick="window.print()">🖨️ Print</button></div>
@@ -248,7 +249,7 @@
       }
     }
     const counts = ['10', '20', '30', '60', 'all'];
-    const typeCount = (t) => pool.filter((q) => q.t === t).length;
+    const typeCount = (t) => pool.filter((q) => typeGroup(q.t) === t).length;
     app.innerHTML = `
       <section class="card setup">
         <div class="crumbs"><a href="#/">Home</a> / ${esc(title)}</div>
@@ -257,7 +258,7 @@
         <form id="setupForm" class="form">
           ${showMods ? `<fieldset><legend>Lessons</legend><div class="chips">${MODULES.map((m) => `<label class="chip"><input type="checkbox" name="mod" value="${m.id}" checked> M${m.num} ${esc(m.short)}</label>`).join('')}</div></fieldset>` : ''}
           <fieldset><legend>Question types</legend><div class="chips">
-            ${['mcq', 'tf', 'match'].map((t) => `<label class="chip"><input type="checkbox" name="type" value="${t}" checked> ${typeLabel[t]} <span class="muted">(${typeCount(t)})</span></label>`).join('')}
+            ${['mcq', 'tf', 'match', 'dnd'].map((t) => `<label class="chip"><input type="checkbox" name="type" value="${t}" checked> ${typeLabel[t]} <span class="muted">(${typeCount(t)})</span></label>`).join('')}
           </div></fieldset>
           <fieldset><legend>Number of questions</legend><div class="chips">
             ${counts.map((c) => `<label class="chip"><input type="radio" name="count" value="${c}" ${c === defaultCount ? 'checked' : ''}> ${c === 'all' ? 'All' : c}</label>`).join('')}
@@ -275,7 +276,7 @@
       const fd = new FormData(form);
       const types = fd.getAll('type');
       const mods = showMods ? fd.getAll('mod') : null;
-      return pool.filter((q) => types.includes(q.t) && (!mods || mods.includes(q.mod)));
+      return pool.filter((q) => types.includes(typeGroup(q.t)) && (!mods || mods.includes(q.mod)));
     };
     const info = () => { document.getElementById('poolInfo').textContent = `${selected().length} questions match these settings.`; };
     form.addEventListener('change', info); info();
@@ -305,6 +306,8 @@
     const p = { src: q };
     if (q.t === 'mcq') { p.correct = q.o[0]; p.options = shuffle(q.o); }
     if (q.t === 'match') { p.left = shuffle(q.p.map((x) => x[0])); p.rights = shuffle([...new Set(q.p.map((x) => x[1]))]); p.key = Object.fromEntries(q.p); }
+    if (q.t === 'dnd') { p.left = shuffle(q.p.map((x) => x[0])); p.buckets = [...new Set(q.p.map((x) => x[1]))]; p.key = Object.fromEntries(q.p); }
+    if (q.t === 'order') { do { p.start = shuffle(q.s); } while (q.s.length > 1 && p.start.join('|') === q.s.join('|')); }
     return p;
   }
   function startQuiz(opts) {
@@ -317,12 +320,13 @@
     if (ans == null) return false;
     if (q.t === 'mcq') return ans === item.correct;
     if (q.t === 'tf') return ans === q.a;
-    if (q.t === 'match') return item.left.every((l) => ans[l] === item.key[l]);
+    if (q.t === 'match' || q.t === 'dnd') return item.left.every((l) => ans[l] === item.key[l]);
+    if (q.t === 'order') return ans.join('|') === q.s.join('|');
     return false;
   }
   function answered(item, ans) {
     if (ans == null) return false;
-    if (item.src.t === 'match') return item.left.every((l) => ans[l]);
+    if (item.src.t === 'match' || item.src.t === 'dnd') return item.left.every((l) => ans[l]);
     return true;
   }
 
@@ -330,6 +334,7 @@
     const item = quiz.items[quiz.idx];
     const q = item.src;
     const m = modById[q.mod];
+    if (q.t === 'order' && !quiz.answers[quiz.idx]) quiz.answers[quiz.idx] = item.start.slice();
     const ans = quiz.answers[quiz.idx];
     const checked = quiz.mode === 'practice' && quiz.checked[quiz.idx];
     const total = quiz.items.length;
@@ -348,6 +353,25 @@
         if (checked) cls = v === q.a ? 'correct' : (ans === v ? 'wrong' : 'dim');
         return `<button class="option ${cls}" data-tf="${v}" ${checked ? 'disabled' : ''}><span class="key">${i ? 'F' : 'T'}</span><span>${v ? 'True' : 'False'}</span></button>`;
       }).join('')}</div>`;
+    } else if (q.t === 'dnd') {
+      const a = ans || {};
+      const chip = (l) => {
+        let cls = quiz.sel === l ? 'sel' : '';
+        if (checked) cls = a[l] === item.key[l] ? 'correct' : 'wrong';
+        return `<span class="dchip ${cls}" draggable="${!checked}" data-chip="${esc(l)}">${esc(l)}${checked && a[l] !== item.key[l] ? `<small>→ ${esc(item.key[l])}</small>` : ''}</span>`;
+      };
+      const pool = item.left.filter((l) => !a[l]);
+      body = `<p class="small muted dnd-help">Drag each item into the right box, or tap an item and then tap a box.</p>
+        <div class="dpool dzone" data-zone="">${pool.length ? pool.map(chip).join('') : '<span class="muted small">All items placed</span>'}</div>
+        <div class="dbuckets">${item.buckets.map((b) => `<div class="dbucket dzone" data-zone="${esc(b)}"><div class="dbucket-title">${esc(b)}</div><div class="dbucket-body">${item.left.filter((l) => a[l] === b).map(chip).join('')}</div></div>`).join('')}</div>`;
+    } else if (q.t === 'order') {
+      body = `<p class="small muted dnd-help">Drag the items (or use the arrows) into the correct order, first at the top.</p>
+        <ol class="dorder">${ans.map((it, i) => {
+          let cls = '';
+          if (checked) cls = it === q.s[i] ? 'correct' : 'wrong';
+          return `<li class="dorder-item ${cls}" draggable="${!checked}" data-pos="${i}"><span class="grip">⠿</span><span class="otext">${esc(it)}${checked && it !== q.s[i] ? `<small>Should be: ${esc(q.s[i])}</small>` : ''}</span>
+            ${checked ? '' : `<span class="oarrows"><button class="obtn" data-up="${i}" ${i === 0 ? 'disabled' : ''} aria-label="Move up">▲</button><button class="obtn" data-down="${i}" ${i === ans.length - 1 ? 'disabled' : ''} aria-label="Move down">▼</button></span>`}</li>`;
+        }).join('')}</ol>`;
     } else {
       const a = ans || {};
       body = `<div class="match">${item.left.map((l, i) => {
@@ -412,6 +436,8 @@
       const again = app.querySelector(`select[data-left="${CSS.escape(s.dataset.left)}"]`);
       if (again) again.focus();
     });
+    if (q.t === 'dnd' && !checked) wireDnd(item);
+    if (q.t === 'order' && !checked) wireOrder();
     const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
     on('checkBtn', () => { quiz.checked[quiz.idx] = true; renderQuestion(); });
     on('skipBtn', () => { quiz.checked[quiz.idx] = true; quiz.answers[quiz.idx] = quiz.answers[quiz.idx] ?? null; advance(); });
@@ -420,6 +446,53 @@
     on('submitBtn', finish);
     on('quitBtn', () => { if (confirmEnd()) finish(); });
     app.querySelectorAll('.dot').forEach((d) => d.onclick = () => { quiz.idx = +d.dataset.go; renderQuestion(); });
+  }
+  // drag & drop into buckets (mouse drag, or tap chip then tap box)
+  function wireDnd(item) {
+    const place = (l, zone) => {
+      const a = Object.assign({}, quiz.answers[quiz.idx] || {});
+      if (zone) a[l] = zone; else delete a[l];
+      quiz.answers[quiz.idx] = a;
+      quiz.sel = null;
+      renderQuestion();
+    };
+    app.querySelectorAll('.dchip').forEach((c) => {
+      c.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', c.dataset.chip); c.classList.add('dragging'); });
+      c.addEventListener('dragend', () => c.classList.remove('dragging'));
+      c.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const zone = c.closest('.dzone');
+        // tapping a chip that sits in a box while another chip is selected drops the selected one into that box
+        if (quiz.sel && quiz.sel !== c.dataset.chip && zone && zone.dataset.zone) return place(quiz.sel, zone.dataset.zone);
+        quiz.sel = quiz.sel === c.dataset.chip ? null : c.dataset.chip;
+        renderQuestion();
+      });
+    });
+    app.querySelectorAll('.dzone').forEach((z) => {
+      z.addEventListener('dragover', (e) => { e.preventDefault(); z.classList.add('over'); });
+      z.addEventListener('dragleave', () => z.classList.remove('over'));
+      z.addEventListener('drop', (e) => { e.preventDefault(); const l = e.dataTransfer.getData('text/plain'); if (item.left.includes(l)) place(l, z.dataset.zone); });
+      z.addEventListener('click', () => { if (quiz.sel) place(quiz.sel, z.dataset.zone); });
+    });
+  }
+  // drag & drop ordering (mouse drag or arrow buttons)
+  function wireOrder() {
+    const move = (from, to) => {
+      const arr = quiz.answers[quiz.idx].slice();
+      const [x] = arr.splice(from, 1);
+      arr.splice(to, 0, x);
+      quiz.answers[quiz.idx] = arr;
+      renderQuestion();
+    };
+    app.querySelectorAll('[data-up]').forEach((b) => b.onclick = () => move(+b.dataset.up, +b.dataset.up - 1));
+    app.querySelectorAll('[data-down]').forEach((b) => b.onclick = () => move(+b.dataset.down, +b.dataset.down + 1));
+    app.querySelectorAll('.dorder-item').forEach((li) => {
+      li.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', li.dataset.pos); li.classList.add('dragging'); });
+      li.addEventListener('dragend', () => li.classList.remove('dragging'));
+      li.addEventListener('dragover', (e) => { e.preventDefault(); li.classList.add('over'); });
+      li.addEventListener('dragleave', () => li.classList.remove('over'));
+      li.addEventListener('drop', (e) => { e.preventDefault(); const from = +e.dataTransfer.getData('text/plain'); const to = +li.dataset.pos; if (from !== to) move(from, to); });
+    });
   }
   function confirmEnd() {
     const unanswered = quiz.items.filter((it, i) => !answered(it, quiz.answers[i])).length;
@@ -512,7 +585,10 @@
     let yours, correct;
     if (q.t === 'mcq') { yours = ans == null ? '<i>No answer</i>' : esc(ans); correct = esc(it.correct); }
     else if (q.t === 'tf') { yours = ans == null ? '<i>No answer</i>' : (ans ? 'True' : 'False'); correct = q.a ? 'True' : 'False'; }
-    else {
+    else if (q.t === 'order') {
+      yours = ans ? '<ol class="mlist">' + ans.map((x, k) => `<li class="${x === q.s[k] ? 'ok' : 'bad'}">${esc(x)}</li>`).join('') + '</ol>' : '<i>No answer</i>';
+      correct = '<ol class="mlist">' + q.s.map((x) => `<li>${esc(x)}</li>`).join('') + '</ol>';
+    } else {
       const a = ans || {};
       yours = '<ul class="mlist">' + it.left.map((l) => `<li class="${a[l] === it.key[l] ? 'ok' : 'bad'}">${esc(l)} → ${a[l] ? esc(a[l]) : '<i>none</i>'}</li>`).join('') + '</ul>';
       correct = '<ul class="mlist">' + q.p.map(([l, r]) => `<li>${esc(l)} → ${esc(r)}</li>`).join('') + '</ul>';

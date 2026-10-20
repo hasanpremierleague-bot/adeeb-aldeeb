@@ -4,6 +4,7 @@ window.MODULES.push({
   id: 'm7',
   num: 7,
   title: 'Event-Driven Serverless Solutions (Lambda)',
+  scope: 'Slides 7–65',
   short: 'AWS Lambda',
   icon: 'λ',
   study: `
@@ -104,32 +105,22 @@ window.MODULES.push({
     { t: 'match', i: 1, c: 'Deployment models', q: 'Match each deployment model with its characteristic.', p: [['On premises', 'Heavy capital expense and guessed capacity'], ['Virtual servers in the cloud', 'Hardware independence and faster provisioning'], ['Containers', 'Platform independence and isolation/sandboxing'], ['Serverless', 'No OS instances to manage and pay per usage']], e: 'Levels of abstraction.' },
     { t: 'mcq', i: 1, c: 'Serverless', q: 'Which is a characteristic of serverless computing?', o: ['No OS instances to manage and built-in fault tolerance', 'Guessed capacity and years of maintenance', 'Heavy capital expense', 'You must patch the operating system'], e: 'Serverless: no OS, flexible scaling, pay per usage, fault tolerance, zero maintenance.' },
     { t: 'tf', c: 'Serverless', q: 'A higher level of abstraction lets developers focus more on business logic.', a: true, e: 'Serverless = focus on business logic.' },
-    { t: 'mcq', c: 'Serverless', q: 'Modern serverless applications are described as:', o: ['Small pieces, loosely joined', 'One large tightly coupled unit', 'Always monolithic', 'Hardware-dependent'], e: 'Small pieces, loosely joined.' },
-    { t: 'match', c: 'Monolith', q: 'Match each architecture with its scope.', p: [['Monolith', 'Does everything'], ['Microservice', 'Does one thing']], e: 'Moving away from monoliths.' },
 
     { t: 'mcq', i: 1, c: 'Lambda', q: 'What is AWS Lambda?', o: ['A serverless compute service that runs code without provisioning or managing servers', 'A managed container registry', 'A relational database', 'A CDN'], e: 'Lambda runs code in response to events and scales automatically.' },
     { t: 'tf', i: 1, c: 'Lambda', q: 'With Lambda, you pay only for the compute time you use.', a: true, e: 'You don\'t pay for idle resources.' },
-    { t: 'tf', c: 'Lambda', q: 'Lambda provides built-in code monitoring and logging with Amazon CloudWatch.', a: true, e: 'Listed feature.' },
-    { t: 'mcq', c: 'Lambda', q: 'In the real-time stream processing use case, which service streams social media data into Lambda?', o: ['Amazon Kinesis', 'Amazon S3', 'Amazon ECR', 'AWS WAF'], e: 'Kinesis → Lambda → DynamoDB hashtag trends.' },
-    { t: 'mcq', c: 'Lambda', q: 'In the weather web app use case, which service invokes Lambda when the user requests data?', o: ['Amazon API Gateway', 'Amazon Kinesis', 'Amazon SQS', 'AWS Config'], e: 'S3 front end → API Gateway → Lambda → DynamoDB.' },
     { t: 'mcq', i: 1, c: 'Concurrency', q: 'In Lambda, what is concurrency?', o: ['The number of function invocations running at one time', 'The memory size of a function', 'The number of versions published', 'The number of layers attached'], e: 'Concurrency = simultaneous invocations.' },
-    { t: 'tf', c: 'Concurrency', q: 'Lambda functions run in on-demand, ephemeral environments that you control directly.', a: false, e: 'They are ephemeral, but Lambda manages them; you have no direct control.' },
-    { t: 'tf', c: 'Concurrency', q: 'The Lambda burst quota can be modified by the customer.', a: false, e: 'You cannot modify the burst limit.' },
 
     { t: 'match', i: 1, c: 'Invocation models', q: 'Match each invocation model to its behavior.', p: [['Synchronous', 'Caller waits for the function response'], ['Asynchronous', 'Lambda queues the event and the caller moves on'], ['Polling (event source mapping)', 'Lambda reads batches from a stream or queue']], e: 'Three invocation models.' },
-    { t: 'match', i: 1, c: 'Invocation models', q: 'Match each event source with its invocation model.', p: [['Amazon API Gateway', 'Synchronous'], ['Amazon S3', 'Asynchronous'], ['Amazon SNS', 'Asynchronous'], ['Amazon SQS', 'Polling'], ['DynamoDB Streams', 'Polling']], e: 'API Gateway sync; S3/SNS async; SQS/Kinesis/DynamoDB Streams poll.' },
+    { t: 'dnd', i: 1, c: 'Invocation models', q: 'Drag each event source to its invocation model.', p: [['Amazon API Gateway', 'Synchronous'], ['Amazon S3', 'Asynchronous'], ['Amazon SNS', 'Asynchronous'], ['Amazon SQS', 'Polling'], ['DynamoDB Streams', 'Polling']], e: 'API Gateway sync; S3/SNS async; SQS/Kinesis/DynamoDB Streams poll.' },
     { t: 'mcq', i: 1, c: 'Invocation models', q: 'How many times does Lambda automatically retry a failed asynchronous invocation by default?', o: ['2', '0', '5', 'Unlimited'], e: 'Async invocations are retried twice; failed events can go to a DLQ.' },
     { t: 'tf', i: 1, c: 'Invocation models', q: 'Synchronous invocations have built-in retries handled by Lambda.', a: false, e: 'There is no built-in retry for sync; manage retries in your app.' },
-    { t: 'match', c: 'Invocation models', q: 'Match each invoke response status code with its meaning.', p: [['200', 'Synchronous invocation completed'], ['202', 'Asynchronous event accepted (queued)']], e: 'Sync returns 200; async returns 202.' },
     { t: 'mcq', c: 'Invocation models', q: 'Which are stream-based polling sources?', o: ['DynamoDB Streams and Kinesis Data Streams', 'Amazon S3 and SNS', 'API Gateway and ELB', 'CloudFront and Cognito'], e: 'Streams: DynamoDB Streams and Kinesis. Queue: SQS.' },
     { t: 'tf', c: 'Invocation models', q: 'When an SQS-triggered invocation fails, the message returns to the queue and is retried.', a: true, e: 'Retried until success, retry limit or retention period.' },
     { t: 'tf', c: 'Invocation models', q: 'In the polling model, the event source pushes events to Lambda and waits for a response.', a: false, e: 'In the polling model, Lambda polls the stream or queue itself.' },
 
     { t: 'match', i: 1, c: 'Permissions', q: 'Match each Lambda permission type with what it controls.', p: [['Resource-based (function) policy', 'Which event sources may invoke the function'], ['Execution role', 'What the function may do with other AWS services'], ['Trust policy', 'Lets the Lambda service assume the execution role']], e: 'Invocation permissions vs execution role.' },
-    { t: 'mcq', i: 1, c: 'Permissions', q: 'An S3 bucket must invoke a Lambda function. Which action must the function\'s resource policy allow?', o: ['lambda:InvokeFunction', 'sts:AssumeRole', 's3:GetObject', 'logs:PutLogEvents'], e: 'The event source needs lambda:InvokeFunction.' },
     { t: 'mcq', i: 1, c: 'Permissions', q: 'A Lambda function must write items to DynamoDB. Where do you grant that permission?', o: ['In the function\'s execution role', 'In the function\'s resource-based policy', 'In the S3 bucket policy', 'In the API Gateway stage'], e: 'The execution role defines what the function may do.' },
     { t: 'tf', c: 'Permissions', q: 'Polling event sources need the execution role to give the function permission to read from the queue or stream.', a: true, e: 'For polling, Lambda reads using the execution role.' },
-    { t: 'tf', c: 'Permissions', q: 'To pass an execution role to Lambda, you need the iam:PassRole permission.', a: true, e: 'Speaker notes mention iam:PassRole.' },
 
     { t: 'mcq', i: 1, c: 'Handler', q: 'What is the entry point of a Lambda function?', o: ['The handler method (event, context)', 'The bootstrap of every runtime', 'The alias', 'The layer'], e: 'The function handler is the entry point.' },
     { t: 'match', i: 1, c: 'Handler', q: 'Match each handler object with what it passes.', p: [['Event object', 'Event data that triggered the function'], ['Context object', 'Runtime information such as awsRequestId']], e: 'Event vs context.' },
@@ -141,7 +132,6 @@ window.MODULES.push({
     { t: 'match', i: 1, c: 'Configuration', q: 'Match each configuration with its description.', p: [['Destinations', 'Receive records on success or failure (SNS, SQS, Lambda, EventBridge)'], ['Environment variables', 'Key-value settings available to code without changing it'], ['Code signing', 'Ensure code is signed by an approved source and unaltered'], ['Database proxies', 'Connection pooling for Amazon RDS'], ['File systems', 'Connect Amazon EFS at runtime']], e: 'Resource and code configurations.' },
     { t: 'mcq', c: 'Configuration', q: 'How long can an asynchronous event wait to be invoked at most?', o: ['Up to 6 hours', 'Up to 15 minutes', 'Up to 24 hours', 'Up to 35 days'], e: 'Max event age up to 6 hours.' },
     { t: 'tf', c: 'Configuration', q: 'You can configure a Lambda function to access resources in a custom VPC.', a: true, e: 'VPC configuration.' },
-    { t: 'mcq', c: 'Configuration', q: 'Which settings enable X-Ray active tracing and CloudWatch Lambda Insights?', o: ['Monitoring and operations', 'Triggers', 'Tags', 'Runtime'], e: 'Performance-related: monitoring and operations.' },
 
     { t: 'mcq', i: 1, c: 'Best practices', q: 'Which is a Lambda best practice?', o: ['Treat functions as stateless', 'Call one Lambda function from another', 'Use recursive code', 'Put all business logic inside the handler'], e: 'Stateless, include only what you need, reuse the environment, separate logic from handler.' },
     { t: 'tf', c: 'Best practices', q: 'You should avoid recursive code and avoid calling one Lambda function from another.', a: true, e: 'Best practices for writing code.' },
@@ -149,7 +139,6 @@ window.MODULES.push({
     { t: 'tf', c: 'Tuning', q: 'Higher memory always increases the total cost of a Lambda function.', a: false, e: 'Higher memory costs more per ms but may decrease duration, making CPU-intensive functions cheaper and faster.' },
 
     { t: 'match', i: 1, c: 'Deployment', q: 'Match each deployment option with its description.', p: [['.zip archive', 'Compress code and dependencies and upload them'], ['Container image', 'Package code as an image and push it to Amazon ECR']], e: 'Two deployment package types.' },
-    { t: 'match', c: 'Deployment', q: 'Match each .zip deployment limit.', p: [['Direct upload (compressed)', '50 MB'], ['Unzipped including layers', '250 MB'], ['Console editor', '3 MB']], e: 'Deployment package limits.' },
     { t: 'mcq', c: 'Deployment', q: 'Where must a container image be stored for Lambda to use it?', o: ['Amazon ECR', 'Amazon S3 Glacier', 'Docker Hub only', 'AWS CodeCommit'], e: 'Push the image to Amazon ECR.' },
     { t: 'match', i: 1, c: 'Versions & aliases', q: 'Match each term with its description.', p: [['Version', 'Immutable snapshot of code and configuration'], ['$LATEST', 'The editable, unpublished version'], ['Alias', 'Mutable pointer to a version']], e: 'Versions are immutable; aliases are mutable pointers.' },
     { t: 'tf', i: 1, c: 'Versions & aliases', q: 'You can edit the code of a published Lambda version such as version 1.', a: false, e: 'Published versions are immutable; you edit $LATEST and publish a new version.' },
@@ -160,11 +149,13 @@ window.MODULES.push({
     { t: 'tf', c: 'Layers', q: 'A Lambda function can use up to 10 layers.', a: false, e: 'The limit is up to five layers (250 MB).' },
 
     { t: 'mcq', i: 1, c: 'CloudWatch', q: 'Where does Lambda write its logs?', o: ['A CloudWatch log group named /aws/lambda/<function name>', 'An S3 bucket named after the function', 'AWS CloudTrail only', 'The X-Ray console only'], e: 'One log group per function.' },
-    { t: 'mcq', c: 'CloudWatch', q: 'Which log event shows duration, billed duration and memory for an invocation?', o: ['REPORT', 'START', 'END', 'INIT'], e: 'Each request logs START, END and REPORT.' },
-    { t: 'tf', c: 'CloudWatch', q: 'CloudWatch Logs Insights lets you query log data interactively.', a: true, e: 'CloudWatch feature.' },
     { t: 'mcq', i: 1, c: 'X-Ray', q: 'Which service traces requests through your application and shows a map of its components?', o: ['AWS X-Ray', 'Amazon CloudWatch Logs', 'AWS Config', 'Amazon ECR'], e: 'X-Ray traces requests and builds a service map.' },
     { t: 'match', i: 1, c: 'X-Ray', q: 'Match each X-Ray trace element with its description.', p: [['Segment', 'Work done by a compute resource'], ['Subsegment', 'More granular timing and downstream calls'], ['Annotation', 'Indexed key-value pairs used in filter expressions'], ['Metadata', 'Non-indexed key-value data not used for searching']], e: 'Parts of an X-Ray trace.' },
     { t: 'tf', c: 'X-Ray', q: 'X-Ray metadata is indexed so you can filter traces by it.', a: false, e: 'Annotations are indexed; metadata is not.' },
-    { t: 'mcq', c: 'Monitoring', q: 'Which is a challenge that modern applications pose for traditional monitoring?', o: ['Short-lived resources and faster release velocity', 'Too few devices', 'Slower releases', 'Fewer services'], e: 'Challenges: short-lived resources, more devices/services/data, faster velocity, user experience.' }
+    { t: 'mcq', i: 1, c: 'Configuration limits', q: 'A data-processing job takes about 40 minutes to run. Is Lambda a good fit as-is?', o: ['No, because the maximum Lambda timeout is 15 minutes', 'Yes, Lambda can run for up to 24 hours', 'Yes, if you add more layers', 'Yes, if you enable provisioned concurrency'], e: 'Lambda functions can run for at most 15 minutes.' },
+    { t: 'mcq', i: 1, c: 'Configuration', q: 'A Lambda function needs a database endpoint that differs between dev and prod without changing code. What should you use?', o: ['Environment variables', 'Layers', 'A larger memory setting', 'Code signing'], e: 'Environment variables store configuration without code changes.' },
+    { t: 'mcq', i: 1, c: 'X-Ray', q: 'Users report that an API backed by Lambda is slow, and you need to find which downstream call causes the latency. Which tool helps most?', o: ['AWS X-Ray', 'AWS Config', 'Amazon ECR', 'IAM Access Analyzer'], e: 'X-Ray traces requests end to end and shows latency per segment.' },
+    { t: 'order', i: 1, c: 'Deployment models', q: 'Order the deployment models from least to most abstraction.', s: ['On premises', 'Virtual servers in the cloud', 'Containers', 'Serverless'], e: 'Higher abstraction lets you focus on business logic.' },
+    { t: 'dnd', i: 1, c: 'Permissions', q: 'Drag each permission to where it is defined.', p: [['S3 is allowed to invoke the function', 'Resource-based (function) policy'], ['SNS is allowed to invoke the function', 'Resource-based (function) policy'], ['Function can write to DynamoDB', 'Execution role'], ['Function can write logs to CloudWatch', 'Execution role']], e: 'Who can invoke = function policy. What the function can do = execution role.' }
   ]
 });
