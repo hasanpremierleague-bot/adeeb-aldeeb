@@ -1,5 +1,5 @@
 # Cloud Dev Quiz
-
+https://hasanpremierleague-bot.github.io/adeeb-aldeeb/
 A static study and quiz site for the IT7101 midterm: AWS Academy Cloud Developing Modules 3–8, using the official slide ranges (M03 7–34, M04 6–43, M05 7–63, M06 7–87, M07 7–65, M08 6–49). Code slides are excluded.
 
 - A study sheet for every lesson.
