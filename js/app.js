@@ -9,8 +9,10 @@
 
   // Give every question a stable id and back-reference to its module
   const ALL = [];
-  MODULES.forEach((m) => m.questions.forEach((q, i) => {
-    q.id = m.id + '-' + i;
+  // id = module + hash of the question text, so adding or removing questions keeps saved progress pointing at the right ones
+  const hash = (str) => { let h = 5381; for (let k = 0; k < str.length; k++) h = ((h << 5) + h + str.charCodeAt(k)) | 0; return (h >>> 0).toString(36); };
+  MODULES.forEach((m) => m.questions.forEach((q) => {
+    q.id = m.id + '-' + hash(q.q);
     q.mod = m.id;
     ALL.push(q);
   }));
@@ -20,8 +22,8 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const shuffle = (arr) => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
-  const typeLabel = { mcq: 'Multiple choice', tf: 'True / False', match: 'Matching', dnd: 'Drag & drop', order: 'Drag & drop (order)' };
-  const typeGroup = (t) => (t === 'order' ? 'dnd' : t);
+  const typeLabel = { mcq: 'Multiple choice', multi: 'Multiple answers', tf: 'True / False', match: 'Matching', dnd: 'Drag & drop', order: 'Drag & drop (order)' };
+  const typeGroup = (t) => (t === 'order' ? 'dnd' : t === 'multi' ? 'mcq' : t);
 
   // ---------- theme ----------
   const themeBtn = document.getElementById('themeBtn');
@@ -175,7 +177,7 @@
       <section class="hero">
         <div>
           <h1>${hello}</h1>
-          <p class="muted">Study sheets and ${ALL.length} quiz questions (multiple choice, true/false, matching and drag &amp; drop) covering the IT7101 midterm scope: Modules 3–8 of AWS Academy Cloud Developing, code slides excluded.</p>
+          <p class="muted">Study sheets and ${ALL.length} quiz questions (multiple choice, multiple answers, true/false, matching and drag &amp; drop) covering the IT7101 midterm scope: Modules 3–8 of AWS Academy Cloud Developing, code slides excluded.</p>
         </div>
         <div class="stats">
           <div class="stat"><b>${MODULES.length}</b><span>lessons</span></div>
@@ -305,7 +307,8 @@
   function prepare(q) {
     const p = { src: q };
     if (q.t === 'mcq') { p.correct = q.o[0]; p.options = shuffle(q.o); }
-    if (q.t === 'match') { p.left = shuffle(q.p.map((x) => x[0])); p.rights = shuffle([...new Set(q.p.map((x) => x[1]))]); p.key = Object.fromEntries(q.p); }
+    if (q.t === 'multi') { p.correct = q.o.slice(0, q.k); p.options = shuffle(q.o); }
+    if (q.t === 'match') { p.left = shuffle(q.p.map((x) => x[0])); p.rights = shuffle([...new Set(q.p.map((x) => x[1]).concat(q.x || []))]); p.key = Object.fromEntries(q.p); }
     if (q.t === 'dnd') { p.left = shuffle(q.p.map((x) => x[0])); p.buckets = [...new Set(q.p.map((x) => x[1]))]; p.key = Object.fromEntries(q.p); }
     if (q.t === 'order') { do { p.start = shuffle(q.s); } while (q.s.length > 1 && p.start.join('|') === q.s.join('|')); }
     return p;
@@ -319,6 +322,7 @@
     const q = item.src;
     if (ans == null) return false;
     if (q.t === 'mcq') return ans === item.correct;
+    if (q.t === 'multi') return ans.length === item.correct.length && item.correct.every((o) => ans.includes(o));
     if (q.t === 'tf') return ans === q.a;
     if (q.t === 'match' || q.t === 'dnd') return item.left.every((l) => ans[l] === item.key[l]);
     if (q.t === 'order') return ans.join('|') === q.s.join('|');
@@ -327,6 +331,7 @@
   function answered(item, ans) {
     if (ans == null) return false;
     if (item.src.t === 'match' || item.src.t === 'dnd') return item.left.every((l) => ans[l]);
+    if (item.src.t === 'multi') return ans.length > 0;
     return true;
   }
 
@@ -346,6 +351,14 @@
         let cls = ans === o ? 'selected' : '';
         if (checked) cls = o === item.correct ? 'correct' : (ans === o ? 'wrong' : 'dim');
         return `<button class="option ${cls}" data-val="${esc(o)}" ${checked ? 'disabled' : ''}><span class="key">${'ABCDEFG'[i]}</span><span>${esc(o)}</span></button>`;
+      }).join('')}</div>`;
+    } else if (q.t === 'multi') {
+      const a = ans || [];
+      body = `<p class="small muted dnd-help">Select all that apply (more than one answer is correct).</p><div class="options">${item.options.map((o, i) => {
+        const on = a.includes(o), right = item.correct.includes(o);
+        let cls = on ? 'selected' : '';
+        if (checked) cls = right ? (on ? 'correct' : 'correct missed') : (on ? 'wrong' : 'dim');
+        return `<button class="option multi ${cls}" data-multi="${esc(o)}" ${checked ? 'disabled' : ''}><span class="key">${on ? '✓' : 'ABCDEFG'[i]}</span><span>${esc(o)}</span></button>`;
       }).join('')}</div>`;
     } else if (q.t === 'tf') {
       body = `<div class="options tf">${[true, false].map((v, i) => {
@@ -392,6 +405,7 @@
       feedback = `<div class="feedback ${ok ? 'ok' : 'bad'}"><b>${ok ? '✅ Correct!' : '❌ Not quite.'}</b>
         ${!ok && q.t === 'tf' ? ` The answer is <b>${q.a ? 'True' : 'False'}</b>.` : ''}
         ${!ok && q.t === 'mcq' ? ` The answer is <b>${esc(item.correct)}</b>.` : ''}
+        ${!ok && q.t === 'multi' ? ` The answers are <b>${item.correct.map(esc).join('</b> and <b>')}</b>.` : ''}
         ${q.e ? `<p>${esc(q.e)}</p>` : ''}</div>`;
     }
 
@@ -422,11 +436,18 @@
           <div class="qactions">${actions}</div>
         </article>
         ${quiz.mode === 'exam' ? `<div class="dots">${quiz.items.map((it, i) => `<button class="dot ${i === quiz.idx ? 'cur' : ''} ${answered(it, quiz.answers[i]) ? 'done' : ''}" data-go="${i}" title="Question ${i + 1}">${i + 1}</button>`).join('')}</div>` : ''}
-        <p class="small muted center hint">Keys: ${q.t === 'mcq' ? 'A–D to choose, ' : q.t === 'tf' ? 'T / F to choose, ' : ''}Enter to ${quiz.mode === 'practice' ? 'check / continue' : 'go next'}.</p>
+        <p class="small muted center hint">Keys: ${q.t === 'mcq' || q.t === 'multi' ? 'A–D to choose, ' : q.t === 'tf' ? 'T / F to choose, ' : ''}Enter to ${quiz.mode === 'practice' ? 'check / continue' : 'go next'}.</p>
       </section>`;
 
     // events
     app.querySelectorAll('.option[data-val]').forEach((b) => b.onclick = () => { quiz.answers[quiz.idx] = b.dataset.val; renderQuestion(); });
+    app.querySelectorAll('.option[data-multi]').forEach((b) => b.onclick = () => {
+      const a = (quiz.answers[quiz.idx] || []).slice();
+      const v = b.dataset.multi, k = a.indexOf(v);
+      if (k >= 0) a.splice(k, 1); else a.push(v);
+      quiz.answers[quiz.idx] = a.length ? a : undefined;
+      renderQuestion();
+    });
     app.querySelectorAll('.option[data-tf]').forEach((b) => b.onclick = () => { quiz.answers[quiz.idx] = b.dataset.tf === 'true'; renderQuestion(); });
     app.querySelectorAll('select[data-left]').forEach((s) => s.onchange = () => {
       const a = Object.assign({}, quiz.answers[quiz.idx] || {});
@@ -507,7 +528,7 @@
     if (!quiz || quiz.done || location.hash !== '#/play' || e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
     const item = quiz.items[quiz.idx];
     const k = e.key.toLowerCase();
-    if (item.src.t === 'mcq' && 'abcdefg'.includes(k) && k.length === 1) { const b = app.querySelectorAll('.option[data-val]')[k.charCodeAt(0) - 97]; if (b && !b.disabled) b.click(); }
+    if ((item.src.t === 'mcq' || item.src.t === 'multi') && 'abcdefg'.includes(k) && k.length === 1) { const b = app.querySelectorAll('.option[data-val], .option[data-multi]')[k.charCodeAt(0) - 97]; if (b && !b.disabled) b.click(); }
     if (item.src.t === 'tf' && (k === 't' || k === 'f')) { const b = app.querySelector(`.option[data-tf="${k === 't'}"]`); if (b && !b.disabled) b.click(); }
     if (k === 'enter') { const b = document.getElementById('nextBtn') || document.getElementById('checkBtn') || document.getElementById('submitBtn'); if (b && !b.disabled) { e.preventDefault(); b.click(); } }
   });
@@ -584,6 +605,7 @@
     const q = it.src;
     let yours, correct;
     if (q.t === 'mcq') { yours = ans == null ? '<i>No answer</i>' : esc(ans); correct = esc(it.correct); }
+    else if (q.t === 'multi') { yours = ans ? ans.map(esc).join('<br>') : '<i>No answer</i>'; correct = it.correct.map(esc).join('<br>'); }
     else if (q.t === 'tf') { yours = ans == null ? '<i>No answer</i>' : (ans ? 'True' : 'False'); correct = q.a ? 'True' : 'False'; }
     else if (q.t === 'order') {
       yours = ans ? '<ol class="mlist">' + ans.map((x, k) => `<li class="${x === q.s[k] ? 'ok' : 'bad'}">${esc(x)}</li>`).join('') + '</ol>' : '<i>No answer</i>';

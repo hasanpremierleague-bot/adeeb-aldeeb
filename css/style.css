@@ -256,3 +256,4 @@ legend { font-weight: 600; padding: 0 6px; font-size: .92rem; }
 .obtn { border: 1px solid var(--border); background: var(--surface-2); color: var(--text); border-radius: 7px; width: 32px; height: 30px; cursor: pointer; font-size: .75rem; }
 .obtn:disabled { opacity: .35; cursor: default; }
 .scope { display: inline-block; font-size: .78rem; font-weight: 600; color: var(--muted); background: var(--surface-2); border-radius: 999px; padding: 2px 9px; margin-top: 4px; }
+.option.correct.missed { border-style: dashed; background: var(--surface); }

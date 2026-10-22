@@ -3,7 +3,7 @@
 A static study and quiz site for the IT7101 midterm: AWS Academy Cloud Developing Modules 3–8, using the official slide ranges (M03 7–34, M04 6–43, M05 7–63, M06 7–87, M07 7–65, M08 6–49). Code slides are excluded.
 
 - A study sheet for every lesson.
-- A quiz for every lesson. The lesson quizzes cover every concept in the slides together. Questions are multiple choice, true/false, matching and drag & drop, with no code questions.
+- A quiz for every lesson. The lesson quizzes cover every concept in the slides together. Questions are multiple choice, multiple answers (select all that apply), true/false, matching and drag & drop, in the same styles as the midterm mock exam. Questions tagged **Exam-style** are modeled on the mock.
 - A **Final exam** that mixes all lessons. You can pick 10, 20, 30, 60 or all questions, and it is graded at the end.
 - An **Important & probable questions** panel with high-yield questions from every lesson.
 - **Review my mistakes**, which collects every question you answered wrong until you get it right.
@@ -66,8 +66,9 @@ The questions and study sheets live in `js/data/m3.js` … `m8.js`. Each questio
 
 ```
 { t: 'mcq',   i: 1, c: 'Topic', q: 'Question?', o: ['Correct answer first', 'Wrong', 'Wrong', 'Wrong'], e: 'Explanation' }
+{ t: 'multi', i: 1, c: 'Topic', q: 'Select all that apply…', o: ['Correct', 'Correct', 'Wrong', 'Wrong'], k: 2, e: 'Explanation' }
 { t: 'tf',          c: 'Topic', q: 'Statement.', a: true, e: 'Explanation' }
-{ t: 'match', i: 1, c: 'Topic', q: 'Match…', p: [['Left', 'Right'], ['Left', 'Right']], e: 'Explanation' }
+{ t: 'match', i: 1, c: 'Topic', q: 'Match…', p: [['Left', 'Right'], ['Left', 'Right']], x: ['Extra wrong choice'], e: 'Explanation' }
 { t: 'dnd',         c: 'Topic', q: 'Drag each…', p: [['Item', 'Box'], ['Item', 'Box']], e: 'Explanation' }
 { t: 'order',       c: 'Topic', q: 'Put in order…', s: ['First', 'Second', 'Third'], e: 'Explanation' }
 ```
@@ -75,4 +76,6 @@ The questions and study sheets live in `js/data/m3.js` … `m8.js`. Each questio
 Fields:
 
 - In multiple-choice questions, the correct option is always listed first. The site shuffles the options when it shows them.
+- In multiple-answer questions, the first `k` options are the correct ones.
+- In matching questions, `x` (optional) adds extra wrong choices to the dropdowns.
 - `i: 1` puts the question in the Important panel.
