@@ -260,3 +260,5 @@ legend { font-weight: 600; padding: 0 6px; font-size: .92rem; }
 .card.resume { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-color: var(--primary); }
 .card.resume h3 { margin: 0 0 4px; }
 .card.resume p { margin: 0; }
+.qtop-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.setup .card.resume { margin: 12px 0; box-shadow: none; }

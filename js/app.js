@@ -56,10 +56,22 @@
       last: Object.assign({}, a.last, b.last, newer.last),
       attempts: Math.max(a.attempts || 0, b.attempts || 0),
       wrong: Object.assign({}, newer.wrong),
-      active: newer.active,
+      saved: mergeSaved(a, b),
+      cleared: Object.assign({}, a.cleared, b.cleared),
       seen: Object.assign({}, a.seen, b.seen),
       updated: Math.max(a.updated || 0, b.updated || 0)
     });
+  }
+  function mergeSaved(a, b) {
+    const out = {}, cleared = Object.assign({}, a.cleared, b.cleared);
+    [a, b].forEach((p) => {
+      const list = Object.assign({}, p.saved, p.active ? { [p.active.key]: p.active } : {});
+      Object.entries(list).forEach(([k, v]) => {
+        if (!v || (cleared[k] && cleared[k] >= (v.at || 0))) return;
+        if (!out[k] || (v.at || 0) > (out[k].at || 0)) out[k] = v;
+      });
+    });
+    return out;
   }
   let syncFailed = false;
   async function pullRemote() {
@@ -83,27 +95,46 @@
     window.Auth.saveRemote(user.uid, progress).then(() => { if (syncFailed) { syncFailed = false; showBanner(); } })
       .catch((e) => { console.warn('Remote save failed', e); syncFailed = true; showBanner(); });
   }
-  // save the quiz you are in the middle of, so you can resume it later or on another device
+  // unfinished quizzes are kept in progress.saved (one per quiz: each lesson, final, important, mistakes),
+  // so every quiz you leave keeps a Continue button, here and on your other devices
+  function savedList() {
+    if (progress.active) { progress.saved = Object.assign({ [progress.active.key]: progress.active }, progress.saved); delete progress.active; }
+    return Object.values(progress.saved || {}).filter((a) => a && a.ids && a.ids.length).sort((a, b) => (b.at || 0) - (a.at || 0));
+  }
   function saveActive() {
     if (!quiz || quiz.done) return;
-    progress.active = {
+    progress.saved = progress.saved || {};
+    progress.saved[quiz.key] = {
       title: quiz.title, kind: quiz.kind, key: quiz.key, mode: quiz.mode, started: quiz.started,
       ids: quiz.items.map((it) => it.src.id), answers: quiz.answers, checked: quiz.checked, idx: quiz.idx, at: Date.now()
     };
     saveProgress();
   }
-  function resumeActive() {
-    const a = progress.active;
-    if (!a) return;
+  function dropSaved(key) {
+    if (progress.saved) delete progress.saved[key];
+    progress.cleared = Object.assign({}, progress.cleared, { [key]: Date.now() });
+  }
+  function resumeActive(key) {
+    const a = key ? (progress.saved || {})[key] : savedList()[0];
+    if (!a) return route();
     const byId = Object.fromEntries(ALL.map((q) => [q.id, q]));
     const keep = a.ids.map((id, i) => [byId[id], i]).filter(([q]) => q);
-    if (!keep.length) { delete progress.active; saveProgress(); return route(); }
+    if (!keep.length) { dropSaved(a.key); saveProgress(); return route(); }
     quiz = { title: a.title, kind: a.kind, key: a.key, mode: a.mode, started: a.started || Date.now(), done: false,
       items: keep.map(([q]) => prepare(q)),
       answers: keep.map(([, i]) => (a.answers || [])[i] ?? undefined),
       checked: keep.map(([, i]) => (a.checked || [])[i] || false),
       idx: Math.min(a.idx || 0, keep.length - 1) };
     if (location.hash === '#/play') renderQuestion(); else location.hash = '#/play';
+  }
+  function continueCard(a, compact) {
+    const n = a.ids.length, done = (a.answers || []).filter((x) => x != null).length;
+    return `<section class="card resume"><div><h3>▶ Continue${compact ? ' your unfinished quiz' : ': ' + esc(a.title)}</h3><p class="muted">Question ${Math.min((a.idx || 0) + 1, n)} of ${n} · ${done} answered · ${a.mode === 'exam' ? 'Exam' : 'Practice'} mode</p></div>
+      <div class="qactions"><button class="btn" data-resume="${esc(a.key)}">Continue</button><button class="btn btn-ghost" data-discard="${esc(a.key)}">Discard</button></div></section>`;
+  }
+  function wireContinue(redraw) {
+    app.querySelectorAll('[data-resume]').forEach((b) => b.onclick = () => resumeActive(b.dataset.resume));
+    app.querySelectorAll('[data-discard]').forEach((b) => b.onclick = () => { if (window.confirm('Discard this unfinished quiz?')) { dropSaved(b.dataset.discard); saveProgress(); redraw(); } });
   }
 
   // ---------- auth wiring ----------
@@ -172,7 +203,7 @@
       case 'important': return viewSetup('important');
       case 'final': return viewSetup('final');
       case 'mistakes': return viewSetup('mistakes');
-      case 'play': return quiz ? renderQuestion() : (progress.active ? resumeActive() : (location.hash = '#/'));
+      case 'play': return quiz ? renderQuestion() : (savedList().length ? resumeActive() : (location.hash = '#/'));
       case 'results': return quiz && quiz.done ? viewResults() : (location.hash = '#/');
       default: return viewHome();
     }
@@ -250,12 +281,7 @@
         </div>
       </section>
 
-      ${progress.active && progress.active.ids && progress.active.ids.length ? (() => {
-        const a = progress.active, n = a.ids.length;
-        const done = (a.answers || []).filter((x) => x != null).length;
-        return `<section class="card resume"><div><h3>▶ Continue where you left off</h3><p class="muted">${esc(a.title)} · question ${Math.min((a.idx || 0) + 1, n)} of ${n} · ${done} answered</p></div>
-          <div class="qactions"><button class="btn" id="resumeBtn">Resume quiz</button><button class="btn btn-ghost" id="discardBtn">Discard</button></div></section>`;
-      })() : ''}
+      ${savedList().map((a) => continueCard(a)).join('')}
       <section class="special-grid">
         <a class="special imp" href="#/important"><span class="sp-icon">⭐</span><div><h3>Important &amp; probable questions</h3><p>${importantCount} hand-picked high-yield questions across all lessons.</p></div></a>
         <a class="special fin" href="#/final"><span class="sp-icon">🏁</span><div><h3>Final exam (all lessons)</h3><p>Mixed questions from every lesson, graded at the end.</p></div></a>
@@ -272,14 +298,11 @@
             <p class="muted small">${m.questions.length} questions · ${m.scope}</p>
             <div class="meter"><div style="width:${best || 0}%"></div></div>
             <p class="small">${best == null ? 'Not attempted yet' : 'Best score: <b>' + best + '%</b>'}</p>
-            <div class="lesson-actions"><a class="btn btn-ghost btn-sm" href="#/study/${m.id}">📖 Study sheet</a><a class="btn btn-sm" href="#/quiz/${m.id}">📝 Quiz</a></div>
+            <div class="lesson-actions"><a class="btn btn-ghost btn-sm" href="#/study/${m.id}">📖 Study sheet</a><a class="btn btn-sm" href="#/quiz/${m.id}">📝 Quiz</a>${(progress.saved || {})[m.id] ? `<button class="btn btn-sm" data-resume="${m.id}">▶ Continue</button>` : ''}</div>
           </article>`;
         }).join('')}
       </section>`;
-    const rb = document.getElementById('resumeBtn');
-    if (rb) rb.onclick = resumeActive;
-    const db = document.getElementById('discardBtn');
-    if (db) db.onclick = () => { delete progress.active; saveProgress(); viewHome(); };
+    wireContinue(viewHome);
   }
 
   // ---------- study ----------
@@ -331,6 +354,7 @@
         <div class="crumbs"><a href="#/">Home</a> / ${esc(title)}</div>
         <h1>${esc(title)}</h1>
         <p class="muted">${esc(sub)}</p>
+        ${(progress.saved || {})[kind === 'lesson' ? id : kind] ? continueCard(progress.saved[kind === 'lesson' ? id : kind], true) : ''}
         <form id="setupForm" class="form">
           ${showMods ? `<fieldset><legend>Lessons</legend><div class="chips">${MODULES.map((m) => `<label class="chip"><input type="checkbox" name="mod" value="${m.id}" checked> M${m.num} ${esc(m.short)}</label>`).join('')}</div></fieldset>` : ''}
           <fieldset><legend>Question types</legend><div class="chips">
@@ -347,6 +371,7 @@
           <button class="btn btn-lg" type="submit">Start quiz →</button>
         </form>
       </section>`;
+    wireContinue(() => viewSetup(kind, id));
     const form = document.getElementById('setupForm');
     const selected = () => {
       const fd = new FormData(form);
@@ -499,7 +524,7 @@
       <section class="quiz">
         <div class="quiz-top">
           <div><p class="lesson-num">${esc(quiz.title)}</p><p class="small muted">Question ${quiz.idx + 1} of ${total} · ${quiz.mode === 'exam' ? 'Exam mode' : 'Practice mode'}</p></div>
-          <button class="btn btn-sm btn-ghost" id="quitBtn">${quiz.mode === 'exam' ? 'Submit now' : 'End quiz'}</button>
+          <div class="qtop-btns"><button class="btn btn-sm btn-ghost" id="exitBtn" title="Your answers are kept. Continue later from the home page.">💾 Save &amp; exit</button><button class="btn btn-sm btn-ghost" id="quitBtn">${quiz.mode === 'exam' ? 'Submit now' : 'End quiz'}</button></div>
         </div>
         <div class="progress"><div style="width:${pct(quiz.idx + (checked ? 1 : 0), total)}%"></div></div>
         <article class="card qcard">
@@ -541,6 +566,7 @@
     on('prevBtn', () => { quiz.idx--; renderQuestion(); });
     on('submitBtn', finish);
     on('quitBtn', () => { if (confirmEnd()) finish(); });
+    on('exitBtn', () => { saveActive(); pushRemote(); quiz = null; location.hash = '#/'; });
     app.querySelectorAll('.dot').forEach((d) => d.onclick = () => { quiz.idx = +d.dataset.go; renderQuestion(); });
   }
   // drag & drop into buckets (mouse drag, or tap chip then tap box)
@@ -610,7 +636,7 @@
 
   function finish() {
     quiz.done = true;
-    delete progress.active;
+    dropSaved(quiz.key);
     quiz.results = quiz.items.map((it, i) => isCorrect(it, quiz.answers[i]));
     const score = pct(quiz.results.filter(Boolean).length, quiz.items.length);
     quiz.score = score;
