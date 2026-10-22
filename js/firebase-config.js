@@ -27,5 +27,5 @@ window.FIREBASE_CONFIG = {
 window.AUTH_SETTINGS = {
   requireLogin: true,             // when Firebase is configured, users must sign in to use the site
   enableGoogleSignIn: true,       // show the "Continue with Google" button
-  syncProgressToFirestore: false  // also save progress to Firestore (users/{uid}) – needs Firestore enabled
+  syncProgressToFirestore: true   // also save progress to Firestore (users/{uid}) – needs Firestore enabled
 };

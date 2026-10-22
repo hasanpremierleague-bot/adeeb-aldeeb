@@ -45,9 +45,36 @@
     try { progress = Object.assign(emptyProgress(), JSON.parse(localStorage.getItem(storeKey()) || '{}')); }
     catch (e) { progress = emptyProgress(); }
   }
+  // combine two copies of progress (this device + cloud): best scores and seen questions from both,
+  // latest scores and the mistakes list from whichever copy was updated more recently
+  function mergeProgress(a, b) {
+    const newer = (b.updated || 0) > (a.updated || 0) ? b : a;
+    const best = Object.assign({}, a.best);
+    Object.entries(b.best || {}).forEach(([k, v]) => { if (best[k] == null || v > best[k]) best[k] = v; });
+    return Object.assign(emptyProgress(), {
+      best,
+      last: Object.assign({}, a.last, b.last, newer.last),
+      attempts: Math.max(a.attempts || 0, b.attempts || 0),
+      wrong: Object.assign({}, newer.wrong),
+      seen: Object.assign({}, a.seen, b.seen),
+      updated: Math.max(a.updated || 0, b.updated || 0)
+    });
+  }
+  let syncFailed = false;
+  async function pullRemote() {
+    if (!user || !window.Auth.settings.syncProgressToFirestore) return false;
+    try {
+      const remote = await window.Auth.loadRemote(user.uid);
+      if (remote) progress = mergeProgress(progress, Object.assign(emptyProgress(), remote));
+      syncFailed = false;
+      return true;
+    } catch (e) { console.warn('Remote load failed', e); syncFailed = true; return false; }
+  }
   function saveProgress() {
+    progress.updated = Date.now();
     try { localStorage.setItem(storeKey(), JSON.stringify(progress)); } catch (e) { /* ignore */ }
-    if (user) window.Auth.saveRemote(user.uid, progress).catch((e) => console.warn('Remote save failed', e));
+    if (user) window.Auth.saveRemote(user.uid, progress).then(() => { if (syncFailed) { syncFailed = false; showBanner(); } })
+      .catch((e) => { console.warn('Remote save failed', e); syncFailed = true; showBanner(); });
   }
 
   // ---------- auth wiring ----------
@@ -69,16 +96,22 @@
     } else if (window.Auth.loadError) {
       banner.innerHTML = 'Firebase could not load (check your config or network). Running in guest mode.';
       banner.classList.remove('hidden');
+    } else if (user && syncFailed) {
+      banner.innerHTML = 'Your scores could not be synced to the cloud, so they are only saved on this device for now. (Firestore may not be set up yet.)';
+      banner.classList.remove('hidden');
     } else banner.classList.add('hidden');
   }
+  // when you come back to this tab, pick up anything you did on another device
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState !== 'visible' || !user || location.hash === '#/play') return;
+    if (await pullRemote()) { try { localStorage.setItem(storeKey(), JSON.stringify(progress)); } catch (e) { /* ignore */ } route(); }
+    showBanner();
+  });
   const startAuth = () => window.Auth.init(async (u) => {
     user = u;
     loadLocal();
     if (u) {
-      try {
-        const remote = await window.Auth.loadRemote(u.uid);
-        if (remote) { progress = Object.assign(emptyProgress(), remote); saveProgress(); }
-      } catch (e) { console.warn('Remote load failed', e); }
+      if (await pullRemote()) saveProgress();
     }
     authReady = true;
     renderUserBox();
