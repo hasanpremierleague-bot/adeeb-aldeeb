@@ -78,17 +78,21 @@
       const { auth, authMod } = await load();
       return authMod.signOut(auth);
     },
-    // Optional Firestore progress sync
+    // Optional Firestore progress sync. Progress is stored as a JSON string because Firestore
+    // does not allow nested arrays (saved quiz answers contain them).
     async loadRemote(uid) {
       if (!configured || !settings.syncProgressToFirestore) return null;
       const { db, fsMod } = await load();
       const snap = await fsMod.getDoc(fsMod.doc(db, 'users', uid));
-      return snap.exists() ? snap.data().progress || null : null;
+      if (!snap.exists()) return null;
+      const d = snap.data();
+      if (d.progressJson) { try { return JSON.parse(d.progressJson); } catch (e) { return null; } }
+      return d.progress || null;
     },
     async saveRemote(uid, progress) {
       if (!configured || !settings.syncProgressToFirestore) return;
       const { db, fsMod } = await load();
-      await fsMod.setDoc(fsMod.doc(db, 'users', uid), { progress, updatedAt: Date.now() }, { merge: true });
+      await fsMod.setDoc(fsMod.doc(db, 'users', uid), { progressJson: JSON.stringify(progress), updatedAt: Date.now() });
     }
   };
 })();

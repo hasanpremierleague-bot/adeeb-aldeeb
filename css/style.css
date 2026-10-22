@@ -257,3 +257,6 @@ legend { font-weight: 600; padding: 0 6px; font-size: .92rem; }
 .obtn:disabled { opacity: .35; cursor: default; }
 .scope { display: inline-block; font-size: .78rem; font-weight: 600; color: var(--muted); background: var(--surface-2); border-radius: 999px; padding: 2px 9px; margin-top: 4px; }
 .option.correct.missed { border-style: dashed; background: var(--surface); }
+.card.resume { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-color: var(--primary); }
+.card.resume h3 { margin: 0 0 4px; }
+.card.resume p { margin: 0; }
